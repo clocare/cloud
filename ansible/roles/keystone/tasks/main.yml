@@ -1,0 +1,59 @@
+---
+
+- name:  install mysql-server
+  apt:
+    name: mysql-server
+    state: latest
+
+- name: Create the keystone database
+  shell: mysql -e "CREATE DATABASE keystone;"
+
+# TODO update keystone password here
+- name: Grant proper access to the keystone database
+  shell: |
+    mysql -e "CREATE USER 'keystone'@'localhost' IDENTIFIED BY 'password';"
+    mysql -e "GRANT ALL PRIVILEGES ON keystone.* TO 'keystone'@'localhost';"
+    mysql -e "CREATE USER 'keystone'@'%' IDENTIFIED BY 'password';"
+    mysql -e "GRANT ALL PRIVILEGES ON keystone.* TO 'keystone'@'%';"
+#   https://ma.ttias.be/mysql-8-removes-shorthand-creating-user-permissions/
+
+- name:  install keystone
+  apt:
+    name: keystone
+    state: latest
+
+- name: Edit the /etc/keystone/keystone.conf file
+  copy:
+    src: keystone.conf
+    dest: /etc/keystone/keystone.conf
+    owner: keystone
+    group: keystone
+
+- name: Populate the Identity service database
+  shell: su -s /bin/sh -c "keystone-manage db_sync" keystone
+  async: 45
+  poll: 0
+
+- name: Initialize Fernet key repositories
+  shell: |
+    keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone
+    keystone-manage credential_setup --keystone-user keystone --keystone-group keystone
+
+# TODO change admin password
+- name: Bootstrap the Identity service
+  async: 45
+  poll: 0
+  shell: |
+    keystone-manage bootstrap --bootstrap-password password \
+      --bootstrap-admin-url http://controller:5000/v3/ \
+      --bootstrap-internal-url http://controller:5000/v3/ \
+      --bootstrap-public-url http://controller:5000/v3/ \
+      --bootstrap-region-id RegionOne
+
+- name: Configure the Apache HTTP server
+  shell: echo "ServerName controller" >> /etc/apache2/apache2.conf 
+
+- name: Restart service apache2, in all cases
+  service:
+    name: apache2
+    state: restarted

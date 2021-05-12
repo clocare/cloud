@@ -16,3 +16,10 @@
 
 - name: install virtualenv and openstacksdk
   shell: pip3 install virtualenv openstacksdk
+
+# TODO update IPs
+- name: add ips to hosts file
+  shell: |
+    echo "192.168.137.10  controller" >> /etc/hosts
+    echo "192.168.137.11  worker1" >> /etc/hosts
+    echo "192.168.137.12  worker2" >> /etc/hosts
