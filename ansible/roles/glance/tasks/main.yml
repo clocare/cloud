@@ -1,0 +1,55 @@
+- name: Create the glance database
+  shell: mysql -e "CREATE DATABASE glance;"
+
+# TODO update glance password here
+- name: Grant proper access to the glance database
+  shell: |
+    mysql -e "CREATE USER 'glance'@'localhost' IDENTIFIED BY 'password';"
+    mysql -e "GRANT ALL PRIVILEGES ON glance.* TO 'glance'@'localhost';"
+    mysql -e "CREATE USER 'glance'@'%' IDENTIFIED BY 'password';"
+    mysql -e "GRANT ALL PRIVILEGES ON glance.* TO 'glance'@'%';"
+#   https://ma.ttias.be/mysql-8-removes-shorthand-creating-user-permissions/
+
+# TODO update glance password here
+- name: Create the glance user
+  shell: openstack user create --domain default --password password glance
+
+- name: Add the admin role to the glance user and service project
+  shell: openstack role add --project service --user glance admin
+
+- name: Create the glance service entity
+  shell: openstack service create --name glance --description "OpenStack Image" image
+
+- name: Create the Image service API endpoints
+  shell: |
+    openstack endpoint create --region RegionOne image public http://controller:9292
+    openstack endpoint create --region RegionOne image internal http://controller:9292
+    openstack endpoint create --region RegionOne image admin http://controller:9292
+
+- name:  install glance
+  apt:
+    name: glance
+    state: latest
+
+- name: Edit the /etc/glance/glance-api.conf file
+  copy:
+    src: glance-api.conf
+    dest: /etc/glance/glance-api.conf
+    owner: glance
+    group: glance
+
+- name: Populate the Image service database
+  shell: su -s /bin/sh -c "glance-manage db_sync" glance
+
+- name: Restart service glance-api
+  service:
+    name: glance-api
+    state: restarted
+
+- name: add cirros image
+  shell: |
+    wget http://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img
+    glance image-create --name "cirros" \
+      --file cirros-0.4.0-x86_64-disk.img \
+      --disk-format qcow2 --container-format bare \
+      --visibility=public
