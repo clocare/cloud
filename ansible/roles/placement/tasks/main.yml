@@ -1,0 +1,55 @@
+- name: Create the placement database
+  shell: mysql -e "CREATE DATABASE placement;"
+
+# TODO update placement password here
+- name: Grant proper access to the placement database
+  shell: |
+    mysql -e "CREATE USER 'placement'@'localhost' IDENTIFIED BY 'password';"
+    mysql -e "GRANT ALL PRIVILEGES ON placement.* TO 'placement'@'localhost';"
+    mysql -e "CREATE USER 'placement'@'%' IDENTIFIED BY 'password';"
+    mysql -e "GRANT ALL PRIVILEGES ON placement.* TO 'placement'@'%';"
+#   https://ma.ttias.be/mysql-8-removes-shorthand-creating-user-permissions/
+
+# TODO update placement password here
+- name: Create the placement user
+  shell: openstack user create --domain default --password password placement
+
+- name: Add the admin role to the placement user and service project
+  shell: openstack role add --project service --user placement admin
+
+- name: Create the placement service entity
+  shell: openstack service create --name placement --description "Placement API" placement
+
+- name: Create the placement service API endpoints
+  shell: |
+    openstack endpoint create --region RegionOne placement public http://controller:8778
+    openstack endpoint create --region RegionOne placement internal http://controller:8778
+    openstack endpoint create --region RegionOne placement admin http://controller:8778
+
+- name:  install placement
+  apt:
+    name: placement-api
+    state: latest
+
+- name: Edit the /etc/placement/placement.conf file
+  copy:
+    src: placement.conf
+    dest: /etc/placement/placement.conf
+    owner: placement
+    group: placement
+
+- name: Populate the placement database
+  shell: su -s /bin/sh -c "placement-manage db sync" placement
+
+- name: Restart service apache2
+  service:
+    name: apache2
+    state: restarted
+
+- name: Install the osc-placement plugin
+  shell: pip3 install osc-placement
+
+- name: List available resource classes and traits
+  shell: |
+    openstack --os-placement-api-version 1.2 resource class list --sort-column name
+    openstack --os-placement-api-version 1.6 trait list --sort-column name
