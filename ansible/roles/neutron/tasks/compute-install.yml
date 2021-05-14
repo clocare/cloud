@@ -1,0 +1,25 @@
+- name:  install the packages
+  apt:
+    name: neutron-linuxbridge-agent
+    state: latest
+
+- name: Edit the  /etc/neutron/neutron.conf file
+  copy:
+    src: compute-neutron.conf
+    dest:  /etc/neutron/neutron.conf
+    owner: neutron
+    group: neutron
+    mode: u=rw,g=rw,o=r
+
+- name: Edit the /etc/neutron/plugins/ml2/linuxbridge_agent.ini file
+  template:
+    src: linuxbridge_agent.ini
+    dest: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+    owner: neutron
+    group: neutron
+    mode: u=rw,g=rw,o=r
+
+- name: Restart the Networking services
+  service:
+    name: neutron-linuxbridge-agent
+    state: restarted

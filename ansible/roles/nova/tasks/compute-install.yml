@@ -1,4 +1,4 @@
-- name:  install the packages
+- name:  install the package
   apt:
     name: nova-compute
     state: latest

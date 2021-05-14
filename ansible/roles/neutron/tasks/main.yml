@@ -1,0 +1,15 @@
+- name: Install and configure controller node
+  include: controller-install.yml
+  when: "'controller' in {{ group_names }}"
+
+- name: Install and configure a compute node
+  include: compute-install.yml
+  when: "'compute' in {{ group_names }}"
+
+- name: verify successful launch of the neutron agents
+  shell: openstack network agent list
+  register: netreg
+
+- name: print previous command output
+  debug:
+    var: netreg.stdout_lines

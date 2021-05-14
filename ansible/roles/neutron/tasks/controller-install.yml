@@ -1,0 +1,51 @@
+- name: Create the neutron database
+  shell: mysql -e "CREATE DATABASE neutron;"
+
+- name: Grant proper access to the neutron database
+  shell: |
+    mysql -e "CREATE USER 'neutron'@'localhost' IDENTIFIED BY 'password';"
+    mysql -e "GRANT ALL PRIVILEGES ON neutron.* TO 'neutron'@'localhost';"
+    mysql -e "CREATE USER 'neutron'@'%' IDENTIFIED BY 'password';"
+    mysql -e "GRANT ALL PRIVILEGES ON neutron.* TO 'neutron'@'%';"
+
+- name: Create the neutron user
+  shell: openstack user create --domain default --password password neutron
+
+- name: Add the admin role to the neutron user
+  shell: openstack role add --project service --user neutron admin
+
+- name: Create the neutron service entity
+  shell: openstack service create --name neutron --description "OpenStack Networking" network
+
+- name: Create the Networking service API endpoints
+  shell: |
+    openstack endpoint create --region RegionOne network public http://controller:9696
+    openstack endpoint create --region RegionOne network internal http://controller:9696
+    openstack endpoint create --region RegionOne network admin http://controller:9696
+
+- name: Self-service networks
+  include: self-service-networks.yml
+
+- name: Edit the /etc/neutron/metadata_agent.ini file
+  copy:
+    src: metadata_agent.ini
+    dest: /etc/neutron/metadata_agent.ini
+    owner: neutron
+    group: neutron
+    mode: u=rw,g=rw,o=r
+
+- name: Populate the database
+  shell: |
+    su -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf \
+      --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head" neutron
+
+- name: Restart the Networking services
+  service:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - neutron-server
+    - neutron-linuxbridge-agent
+    - neutron-dhcp-agent
+    - neutron-metadata-agent
+    - neutron-l3-agent

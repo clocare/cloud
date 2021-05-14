@@ -1,10 +1,12 @@
 - hosts: all
+  name: install dependenies
   gather_facts: no
   become: yes
   roles:
     - openstack
 
 - hosts: controller
+  name: install keystone, glance and placement on controller node
   gather_facts: no
   become: yes
   roles:
@@ -21,10 +23,12 @@
     OS_IDENTITY_API_VERSION: 3
 
 - hosts: all
-  gather_facts: no
+  name: install nova and neutron
+  gather_facts: yes
   become: yes
   roles:
     - nova
+    - neutron
   environment:
     OS_USERNAME: admin
     OS_PASSWORD: password
