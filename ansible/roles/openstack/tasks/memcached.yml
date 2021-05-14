@@ -1,0 +1,17 @@
+- name: Install the packages
+  apt:
+    name: memcached
+    state: latest
+
+- name: Edit the /etc/memcached.conf file
+  template:
+    src: memcached.conf
+    dest: /etc/memcached.conf
+    owner: root
+    group: root
+    mode: u=rw,g=rw,o=r
+
+- name: Restart service memcached
+  service:
+    name: memcached
+    state: restarted

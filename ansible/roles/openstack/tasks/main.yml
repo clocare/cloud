@@ -9,3 +9,15 @@
 
 - name: install openstack client
   include: os-client.yml
+
+- name: install rabbitmq
+  include: rabbitmq.yml
+  when: "'controller' in {{ group_names }}"
+
+- name: install memcached
+  include: memcached.yml
+  when: "'controller' in {{ group_names }}"
+
+- name: install etcd
+  include: etcd.yml
+  when: "'controller' in {{ group_names }}"

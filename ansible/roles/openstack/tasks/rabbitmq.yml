@@ -1,0 +1,11 @@
+- name: Install the package
+  apt:
+    name: rabbitmq-server
+    state: latest
+
+# TODO update rabbitmq password
+- name: Add the openstack user
+  shell: rabbitmqctl add_user openstack password
+
+- name: Permit configuration, write, and read access for the openstack user
+  shell: rabbitmqctl set_permissions openstack ".*" ".*" ".*"
