@@ -1,0 +1,16 @@
+- name: install horizon
+  apt:
+    name: openstack-dashboard
+    state: latest
+
+- name: Edit the /etc/openstack-dashboard/local_settings.py file
+  copy:
+    src: local_settings.py
+    dest: /etc/openstack-dashboard/local_settings.py
+    owner: horizon
+    group: horizon
+
+- name: Reload the apache2 service
+  systemd:
+    name: apache2
+    state: reloaded

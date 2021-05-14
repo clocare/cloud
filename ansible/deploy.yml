@@ -13,6 +13,7 @@
     - keystone
     - glance
     - placement
+    - horizon
   environment:
     OS_USERNAME: admin
     OS_PASSWORD: password
