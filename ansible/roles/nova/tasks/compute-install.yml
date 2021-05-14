@@ -1,0 +1,30 @@
+- name:  install the packages
+  apt:
+    name: nova-compute
+    state: latest
+
+- name: Edit the /etc/nova/nova.conf file
+  template:
+    src: compute-nova.conf
+    dest: /etc/nova/nova.conf
+    owner: nova
+    group: nova
+    mode: u=rw,g=rw,o=r
+
+- name: Determine whether your compute node supports hardware acceleration for virtual machines
+  shell: egrep -c '(vmx|svm)' /proc/cpuinfo
+  register: cpureg
+
+- name: configuring libvirt to use QEMU
+  when: cpureg.stdout_lines[0] | int <= 0
+  copy:
+    src: nova-qemu.conf
+    dest: /etc/nova/nova-compute.conf
+    owner: nova
+    group: nova
+    mode: u=rw,g=rw,o=r
+
+- name: Restart the Compute service
+  service:
+    name: nova-compute
+    state: restarted
