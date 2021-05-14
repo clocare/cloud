@@ -1,8 +1,3 @@
-- name:  install mysql-server
-  apt:
-    name: mysql-server
-    state: latest
-
 - name: Create the keystone database
   shell: mysql -e "CREATE DATABASE keystone;"
 

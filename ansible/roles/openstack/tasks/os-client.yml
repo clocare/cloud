@@ -1,0 +1,23 @@
+- name: Enable Repo OpenStack Victoria for Ubuntu 20.04 LTS
+  shell: add-apt-repository -y cloud-archive:victoria
+
+- name: Install the OpenStack client
+  apt:
+    name: python3-openstackclient
+    state: latest
+    update_cache: yes
+
+- name: Install pip
+  shell: |
+    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+    python3 get-pip.py
+
+- name: install virtualenv and openstacksdk
+  shell: pip3 install virtualenv openstacksdk
+
+- name: add ips to hosts file
+  shell: |
+    echo "{{ hostvars[inventory_hostname]['groups']['controller'][0] }}  controller" >> /etc/hosts
+    echo "{{ hostvars[inventory_hostname]['groups']['compute'][0] }}  compute1" >> /etc/hosts
+    echo "{{ hostvars[inventory_hostname]['groups']['compute'][1] }}  compute2" >> /etc/hosts
+# https://stackoverflow.com/a/39500368/9572485

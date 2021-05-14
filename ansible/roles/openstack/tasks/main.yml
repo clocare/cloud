@@ -1,25 +1,11 @@
----
+- name: install chrony
+  include: chrony.yml
 
-- name: Enable Repo OpenStack Victoria for Ubuntu 20.04 LTS
-  shell: add-apt-repository -y cloud-archive:victoria
-
-- name: Install the OpenStack client
+- name:  install MariaDB
+  when: "'controller' in {{ group_names }}"
   apt:
-    name: python3-openstackclient
+    name: mysql-server
     state: latest
-    update_cache: yes
 
-- name: Install pip
-  shell: |
-    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-    python3 get-pip.py
-
-- name: install virtualenv and openstacksdk
-  shell: pip3 install virtualenv openstacksdk
-
-# TODO update IPs
-- name: add ips to hosts file
-  shell: |
-    echo "192.168.137.10  controller" >> /etc/hosts
-    echo "192.168.137.11  worker1" >> /etc/hosts
-    echo "192.168.137.12  worker2" >> /etc/hosts
+- name: install openstack client
+  include: os-client.yml

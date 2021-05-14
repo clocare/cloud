@@ -1,8 +1,8 @@
-- hosts: all
-  gather_facts: no
-  become: yes
-  roles:
-    - openstack
+# - hosts: all
+#   gather_facts: no
+#   become: yes
+#   roles:
+#     - openstack
 
 - hosts: controller
   gather_facts: no
@@ -19,3 +19,9 @@
     OS_PROJECT_DOMAIN_NAME: Default
     OS_AUTH_URL: http://controller:5000/v3
     OS_IDENTITY_API_VERSION: 3
+
+# - hosts: all
+#   gather_facts: no
+#   become: yes
+#   roles:
+#     - nova

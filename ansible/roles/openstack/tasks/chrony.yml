@@ -1,0 +1,30 @@
+- name: Install the package
+  apt:
+    name: chrony
+    state: latest
+    update_cache: yes
+
+- name: Edit the /etc/chrony/chrony.conf file
+  copy:
+    src: chrony.conf
+    dest: /etc/chrony/chrony.conf
+    owner: root
+    group: root
+    mode: u=rw,g=rw,o=r
+
+- name: enable other nodes to connect to the chrony daemon on the controller node
+  shell: echo "allow {{ subnet }}" >> /etc/chrony/chrony.conf
+  when: "'controller' in {{ group_names }}"
+
+- name: Restart service chrony
+  service:
+    name: chrony
+    state: restarted
+
+- name: verify NTP synchronization
+  shell: chronyc sources
+  register: chronyreg
+
+- name: print chrony output
+  debug:
+    var: chronyreg.stdout_lines
