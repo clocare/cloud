@@ -15,12 +15,15 @@
     name: keystone
     state: latest
 
+# TODO update keystone password here
 - name: Edit the /etc/keystone/keystone.conf file
-  copy:
-    src: keystone.conf
-    dest: /etc/keystone/keystone.conf
+  ini_file:
+    path: /etc/keystone/keystone.conf
     owner: keystone
     group: keystone
+    section: database
+    option: connection
+    value: mysql+pymysql://keystone:password@localhost/keystone
 
 - name: Populate the Identity service database
   shell: su -s /bin/sh -c "keystone-manage db_sync" keystone

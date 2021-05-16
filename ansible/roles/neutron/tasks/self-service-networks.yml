@@ -4,41 +4,92 @@
     state: latest
 
 - name: Edit the /etc/neutron/neutron.conf file
-  copy:
-    src: controller-neutron.conf
-    dest: /etc/neutron/neutron.conf
+  ini_file:
+    path: /etc/neutron/neutron.conf
     owner: neutron
     group: neutron
-    mode: u=rw,g=rw,o=r
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  loop:
+    - { section: "database", option: "connection", value: 'mysql+pymysql://neutron:password@localhost/neutron' }
+    - { section: "DEFAULT", option: "transport_url", value: 'rabbit://openstack:password@localhost' }
+    - { section: "DEFAULT", option: "core_plugin", value: "ml2" }
+    - { section: "DEFAULT", option: "service_plugins", value: "router" }
+    - { section: "DEFAULT", option: "allow_overlapping_ips", value: true }
+    - { section: "DEFAULT", option: "auth_strategy", value: "keystone" }
+    - { section: "DEFAULT", option: "notify_nova_on_port_status_changes", value: true }
+    - { section: "DEFAULT", option: "notify_nova_on_port_data_changes", value: true }
+    - { section: "keystone_authtoken", option: "www_authenticate_uri", value: 'http://controller:5000' }
+    - { section: "keystone_authtoken", option: "auth_url", value: 'http://controller:5000' }
+    - { section: "keystone_authtoken", option: "memcached_servers", value: 'controller:11211' }
+    - { section: "keystone_authtoken", option: "auth_type", value: 'password' }
+    - { section: "keystone_authtoken", option: "project_domain_name", value: 'Default' }
+    - { section: "keystone_authtoken", option: "user_domain_name", value: 'Default' }
+    - { section: "keystone_authtoken", option: "project_name", value: 'service' }
+    - { section: "keystone_authtoken", option: "username", value: 'neutron' }
+    - { section: "keystone_authtoken", option: "password", value: 'password' }
+    - { section: "oslo_concurrency", option: "lock_path", value: '/var/lib/neutron/tmp' }
+    - { section: "nova", option: "auth_url", value: 'http://controller:5000' }
+    - { section: "nova", option: "auth_type", value: 'password' }
+    - { section: "nova", option: "project_domain_name", value: 'default' }
+    - { section: "nova", option: "user_domain_name", value: 'default' }
+    - { section: "nova", option: "region_name", value: 'RegionOne' }
+    - { section: "nova", option: "project_name", value: 'service' }
+    - { section: "nova", option: "username", value: 'nova' }
+    - { section: "nova", option: "password", value: 'password' }
 
 - name: Edit the /etc/neutron/plugins/ml2/ml2_conf.ini file
-  copy:
-    src: ml2_conf.ini
-    dest: /etc/neutron/plugins/ml2/ml2_conf.ini
+  ini_file:
+    path: /etc/neutron/plugins/ml2/ml2_conf.ini
     owner: neutron
     group: neutron
-    mode: u=rw,g=rw,o=r
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  loop:
+    - { section: "ml2", option: "type_drivers", value: "flat,vlan,vxlan" }
+    - { section: "ml2", option: "tenant_network_types", value: "vxlan" }
+    - { section: "ml2", option: "mechanism_drivers", value: "linuxbridge,l2population" }
+    - { section: "ml2", option: "extension_drivers", value: "port_security" }
+    - { section: "ml2_type_flat", option: "flat_networks", value: "provider" }
+    - { section: "ml2_type_vxlan", option: "vni_ranges", value: "1:1000" }
+    - { section: "securitygroup", option: "enable_ipset", value: true }
 
 - name: Edit the /etc/neutron/plugins/ml2/linuxbridge_agent.ini file
-  template:
-    src: linuxbridge_agent.ini
-    dest: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+  ini_file:
+    path: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
     owner: neutron
     group: neutron
-    mode: u=rw,g=rw,o=r
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  loop:
+    - { section: "linux_bridge", option: "physical_interface_mappings", value: "provider:{{ ansible_facts['default_ipv4']['interface'] }}" }
+    - { section: "vxlan", option: "enable_vxlan", value: true }
+    - { section: "vxlan", option: "local_ip", value: "{{ hostvars[inventory_hostname]['inventory_hostname'] }}" }
+    - { section: "vxlan", option: "l2_population", value: true }
+    - { section: "securitygroup", option: "enable_security_group", value: true }
+    - { section: "securitygroup", option: "firewall_driver", value: "neutron.agent.linux.iptables_firewall.IptablesFirewallDriver" }
 
 - name: Edit the /etc/neutron/l3_agent.ini file
-  copy:
-    src: l3_agent.ini
-    dest: /etc/neutron/l3_agent.ini
+  ini_file:
+    path: /etc/neutron/l3_agent.ini
     owner: neutron
     group: neutron
-    mode: u=rw,g=rw,o=r
+    section: DEFAULT
+    option: interface_driver
+    value: linuxbridge
 
 - name: Edit the /etc/neutron/dhcp_agent.ini file
-  copy:
-    src: dhcp_agent.ini
-    dest: /etc/neutron/dhcp_agent.ini
+  ini_file:
+    path: /etc/neutron/dhcp_agent.ini
     owner: neutron
     group: neutron
-    mode: u=rw,g=rw,o=r
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  loop:
+    - { section: "DEFAULT", option: "interface_driver", value: "linuxbridge" }
+    - { section: "DEFAULT", option: "dhcp_driver", value: "neutron.agent.linux.dhcp.Dnsmasq" }
+    - { section: "DEFAULT", option: "enable_isolated_metadata", value: true }

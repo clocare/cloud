@@ -6,6 +6,12 @@
   include: compute-install.yml
   when: "'compute' in {{ group_names }}"
 
-- name: IDiscover compute hosts
+- name: Discover compute hosts
   shell: su -s /bin/sh -c "nova-manage cell_v2 discover_hosts --verbose" nova
   when: "'controller' in {{ group_names }}"
+  register: discreg
+
+- name: print previous command output
+  when: "'controller' in {{ group_names }}"
+  debug:
+    var: discreg.stdout_lines

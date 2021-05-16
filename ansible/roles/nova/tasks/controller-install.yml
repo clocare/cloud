@@ -37,12 +37,57 @@
     state: latest
 
 - name: Edit the /etc/nova/nova.conf file
-  template:
-    src: controller-nova.conf
-    dest: /etc/nova/nova.conf
+  ini_file:
+    path: /etc/nova/nova.conf
     owner: nova
     group: nova
-    mode: u=rw,g=rw,o=r
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    state: "{% if item.remove | default(False) %}absent{% else %}present{% endif %}"
+  loop:
+    - { section: "api_database", option: "connection", value: 'mysql+pymysql://nova:password@localhost/nova_api' }
+    - { section: "database", option: "connection", value: 'mysql+pymysql://nova:password@localhost/nova' }
+    - { section: "DEFAULT", option: "transport_url", value: 'rabbit://openstack:password@localhost:5672/' }
+    - { section: "DEFAULT", option: "my_ip", value: "{{ hostvars[inventory_hostname]['inventory_hostname'] }}" }
+    - { section: "DEFAULT", option: "log_dir", value: "", remove: true }
+    - { section: "keystone_authtoken", option: "www_authenticate_uri", value: 'http://controller:5000' }
+    - { section: "keystone_authtoken", option: "auth_url", value: 'http://controller:5000' }
+    - { section: "keystone_authtoken", option: "memcached_servers", value: 'controller:11211' }
+    - { section: "keystone_authtoken", option: "auth_type", value: 'password' }
+    - { section: "keystone_authtoken", option: "project_domain_name", value: 'Default' }
+    - { section: "keystone_authtoken", option: "user_domain_name", value: 'Default' }
+    - { section: "keystone_authtoken", option: "project_name", value: 'service' }
+    - { section: "keystone_authtoken", option: "username", value: 'nova' }
+    - { section: "keystone_authtoken", option: "password", value: 'password' }
+    - { section: "vnc", option: "enabled", value: true }    
+    - { section: "vnc", option: "server_listen", value: '$my_ip' }    
+    - { section: "vnc", option: "server_proxyclient_address", value: '$my_ip' }    
+    - { section: "glance", option: "api_servers", value: 'http://controller:9292' }    
+    - { section: "oslo_concurrency", option: "lock_path", value: '/var/lib/nova/tmp' }    
+    - { section: "placement", option: "region_name", value: 'RegionOne' }    
+    - { section: "placement", option: "project_domain_name", value: 'Default' }    
+    - { section: "placement", option: "project_name", value: 'service' }    
+    - { section: "placement", option: "auth_type", value: 'password' }    
+    - { section: "placement", option: "user_domain_name", value: 'Default' }    
+    - { section: "placement", option: "auth_url", value: 'http://controller:5000/v3' }    
+    - { section: "placement", option: "username", value: 'placement' }    
+    - { section: "placement", option: "password", value: 'password' }    
+    - { section: "scheduler", option: "discover_hosts_in_cells_interval", value: 300 }    
+
+- name: Determine whether the node supports hardware acceleration for virtual machines
+  shell: egrep -c '(vmx|svm)' /proc/cpuinfo
+  register: cpureg
+
+- name: configuring libvirt to use {% if cpureg.stdout_lines[0] | int <= 0 %} qemu {% else %} kvm {% endif %}
+  # when: cpureg.stdout_lines[0] | int <= 0
+  ini_file:
+    path: /etc/nova/nova.conf
+    owner: nova
+    group: nova
+    section: libvirt
+    option: virt_type
+    value: "{% if cpureg.stdout_lines[0] | int <= 0 %}qemu{% else %}kvm{% endif %}"
 
 - name: Populate the nova-api database
   shell: su -s /bin/sh -c "nova-manage api_db sync" nova

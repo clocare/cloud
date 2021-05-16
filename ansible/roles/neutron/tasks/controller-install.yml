@@ -27,24 +27,48 @@
   include: self-service-networks.yml
 
 - name: Edit the /etc/neutron/metadata_agent.ini file
-  copy:
-    src: metadata_agent.ini
-    dest: /etc/neutron/metadata_agent.ini
+  ini_file:
+    path: /etc/neutron/metadata_agent.ini
     owner: neutron
     group: neutron
-    mode: u=rw,g=rw,o=r
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  loop:
+    - { section: "DEFAULT", option: "nova_metadata_host", value: "controller" }
+    - { section: "DEFAULT", option: "metadata_proxy_shared_secret", value: "secret" }
 
+- name: Edit the /etc/nova/nova.conf file
+  ini_file:
+    path: /etc/nova/nova.conf
+    owner: nova
+    group: nova
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  loop:
+    - { section: "neutron", option: "auth_url", value: 'http://controller:5000' }
+    - { section: "neutron", option: "auth_type", value: 'password' }
+    - { section: "neutron", option: "project_domain_name", value: 'default' }
+    - { section: "neutron", option: "user_domain_name", value: 'default' }
+    - { section: "neutron", option: "region_name", value: 'RegionOne' }
+    - { section: "neutron", option: "project_name", value: 'service' }
+    - { section: "neutron", option: "username", value: 'neutron' }
+    - { section: "neutron", option: "password", value: 'password' }
+    - { section: "neutron", option: "service_metadata_proxy", value: true }
+    - { section: "neutron", option: "metadata_proxy_shared_secret", value: 'secret' }
 - name: Populate the database
   shell: |
     su -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf \
       --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head" neutron
 
-- name: Restart the Networking services
+- name: Restart the Networking services & nova-api
   service:
     name: "{{ item }}"
     state: restarted
   loop:
     - neutron-server
+    - nova-api
     - neutron-linuxbridge-agent
     - neutron-dhcp-agent
     - neutron-metadata-agent

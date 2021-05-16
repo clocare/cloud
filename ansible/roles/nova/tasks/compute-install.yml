@@ -4,25 +4,64 @@
     state: latest
 
 - name: Edit the /etc/nova/nova.conf file
-  template:
-    src: compute-nova.conf
-    dest: /etc/nova/nova.conf
+  ini_file:
+    path: /etc/nova/nova.conf
     owner: nova
     group: nova
-    mode: u=rw,g=rw,o=r
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  loop:
+    - { section: "DEFAULT", option: "transport_url", value: 'rabbit://openstack:password@controller' }
+    - { section: "DEFAULT", option: "my_ip", value: "{{ hostvars[inventory_hostname]['inventory_hostname'] }}" }
+    - { section: "api", option: "auth_strategy", value: "keystone" }
+    - { section: "keystone_authtoken", option: "www_authenticate_uri", value: 'http://controller:5000' }
+    - { section: "keystone_authtoken", option: "auth_url", value: 'http://controller:5000' }
+    - { section: "keystone_authtoken", option: "memcached_servers", value: 'controller:11211' }
+    - { section: "keystone_authtoken", option: "auth_type", value: 'password' }
+    - { section: "keystone_authtoken", option: "project_domain_name", value: 'Default' }
+    - { section: "keystone_authtoken", option: "user_domain_name", value: 'Default' }
+    - { section: "keystone_authtoken", option: "project_name", value: 'service' }
+    - { section: "keystone_authtoken", option: "username", value: 'nova' }
+    - { section: "keystone_authtoken", option: "password", value: 'password' }
+    - { section: "vnc", option: "enabled", value: true }    
+    - { section: "vnc", option: "server_listen", value: '0.0.0.0' }    
+    - { section: "vnc", option: "server_proxyclient_address", value: '$my_ip' }    
+    - { section: "vnc", option: "novncproxy_base_url", value: 'http://controller:6080/vnc_auto.html' }    
+    - { section: "glance", option: "api_servers", value: 'http://controller:9292' }    
+    - { section: "oslo_concurrency", option: "lock_path", value: '/var/lib/nova/tmp' }    
+    - { section: "placement", option: "region_name", value: 'RegionOne' }    
+    - { section: "placement", option: "project_domain_name", value: 'Default' }    
+    - { section: "placement", option: "project_name", value: 'service' }    
+    - { section: "placement", option: "auth_type", value: 'password' }    
+    - { section: "placement", option: "user_domain_name", value: 'Default' }    
+    - { section: "placement", option: "auth_url", value: 'http://controller:5000/v3' }    
+    - { section: "placement", option: "username", value: 'placement' }    
+    - { section: "placement", option: "password", value: 'password' }    
 
-- name: Determine whether your compute node supports hardware acceleration for virtual machines
+- name: Determine whether the node supports hardware acceleration for virtual machines
   shell: egrep -c '(vmx|svm)' /proc/cpuinfo
   register: cpureg
 
-- name: configuring libvirt to use QEMU
-  when: cpureg.stdout_lines[0] | int <= 0
-  copy:
-    src: nova-qemu.conf
-    dest: /etc/nova/nova-compute.conf
+- name: configuring libvirt to use {% if cpureg.stdout_lines[0] | int <= 0 %} qemu {% else %} kvm {% endif %}
+  # when: cpureg.stdout_lines[0] | int <= 0
+  ini_file:
+    path: /etc/nova/nova.conf
     owner: nova
     group: nova
-    mode: u=rw,g=rw,o=r
+    section: libvirt
+    option: virt_type
+    value: "{% if cpureg.stdout_lines[0] | int <= 0 %}qemu{% else %}kvm{% endif %}"
+
+- name: configuring libvirt to use {% if cpureg.stdout_lines[0] | int <= 0 %} qemu {% else %} kvm {% endif %}
+  # when: cpureg.stdout_lines[0] | int <= 0
+  ini_file:
+    path:  /etc/nova/nova-compute.conf
+    owner: nova
+    group: nova
+    section: libvirt
+    option: virt_type
+    value: "{% if cpureg.stdout_lines[0] | int <= 0 %}qemu{% else %}kvm{% endif %}"
 
 - name: Restart the Compute service
   service:

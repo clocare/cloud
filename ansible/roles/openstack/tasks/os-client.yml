@@ -1,11 +1,15 @@
-- name: Enable Repo OpenStack Victoria for Ubuntu 20.04 LTS
-  shell: add-apt-repository -y cloud-archive:victoria
+- name: Enable Repo OpenStack wallaby for Ubuntu 20.04 LTS
+  shell: add-apt-repository -y cloud-archive:wallaby
+
+- name: Update and upgrade apt packages
+  apt:
+    upgrade: yes
+    update_cache: yes
 
 - name: Install the OpenStack client
   apt:
     name: python3-openstackclient
     state: latest
-    update_cache: yes
 
 - name: Install pip
   shell: |
