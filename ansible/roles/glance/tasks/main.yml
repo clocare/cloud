@@ -71,3 +71,21 @@
       --file cirros-0.4.0-x86_64-disk.img \
       --disk-format qcow2 --container-format bare \
       --visibility=public
+
+- name: add centos image
+  shell: |
+    wget https://cloud.centos.org/centos/8/x86_64/images/CentOS-8-GenericCloud-8.1.1911-20200113.3.x86_64.qcow2
+    glance image-create --name "centos8" \
+      --file CentOS-8-GenericCloud-8.1.1911-20200113.3.x86_64.qcow2 \
+      --disk-format qcow2 --container-format bare \
+      --visibility=public
+    rm -f CentOS-8-GenericCloud-8.1.1911-20200113.3.x86_64.qcow2
+
+- name: add ubuntu image
+  shell: |
+    wget https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img
+    glance image-create --name "ubuntu18" \
+      --file bionic-server-cloudimg-amd64.img \
+      --disk-format qcow2 --container-format bare \
+      --visibility=public
+    rm -f bionic-server-cloudimg-amd64.img

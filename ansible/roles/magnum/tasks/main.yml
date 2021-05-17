@@ -1,0 +1,106 @@
+- name: Create the magnum database
+  shell: mysql -e "CREATE DATABASE magnum;"
+
+# TODO update magnum password here
+- name: Grant proper access to the magnum database
+  shell: |
+    mysql -e "CREATE USER 'magnum'@'localhost' IDENTIFIED BY 'password';"
+    mysql -e "GRANT ALL PRIVILEGES ON magnum.* TO 'magnum'@'localhost';"
+    mysql -e "CREATE USER 'magnum'@'%' IDENTIFIED BY 'password';"
+    mysql -e "GRANT ALL PRIVILEGES ON magnum.* TO 'magnum'@'%';"
+#   https://ma.ttias.be/mysql-8-removes-shorthand-creating-user-permissions/
+
+# TODO update magnum password here
+- name: Create the magnum user
+  shell: openstack user create --domain default --password password magnum
+
+- name: Add the admin role to the magnum user and service project
+  shell: openstack role add --project service --user magnum admin
+
+- name: Create the magnum service entity
+  shell: openstack service create --name magnum --description "OpenStack Container Infrastructure Management Service" container-infra
+
+- name: Create the Container Infrastructure Management service API endpoints
+  shell: |
+    openstack endpoint create --region RegionOne container-infra public http://controller:9511/v1
+    openstack endpoint create --region RegionOne container-infra internal http://controller:9511/v1
+    openstack endpoint create --region RegionOne container-infra admin http://controller:9511/v1
+
+- name: Create the magnum domain that contains projects and users
+  shell: openstack domain create --description "Owns users and projects created by magnum" magnum
+
+- name: Create the magnum_domain_admin user to manage projects and users in the magnum domain
+  shell: openstack user create --domain magnum --password password magnum_domain_admin
+
+- name: Add the admin role to the magnum_domain_admin user in the magnum domain
+  shell: openstack role add --domain magnum --user-domain magnum --user magnum_domain_admin admin
+
+- name: Install the common and library packages
+  apt:
+    name: [magnum-api, magnum-conductor]
+    state: latest
+
+- name: Edit the /etc/magnum/magnum.conf file
+  ini_file:
+    path: /etc/magnum/magnum.conf
+    owner: magnum
+    group: magnum
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  loop:
+    - { section: "database", option: "connection", value: 'mysql+pymysql://magnum:password@localhost/magnum' }
+    - { section: "api", option: "host", value: "{{ hostvars[inventory_hostname]['groups']['controller'][0] }}" }
+    - { section: "certificates", option: "cert_manager_type", value: "x509keypair" }
+    - { section: "cinder_client", option: "region_name", value: "RegionOne" }
+    - { section: "keystone_authtoken", option: "region_name", value: "RegionOne" }
+    - { section: "keystone_authtoken", option: "www_authenticate_uri", value: 'http://controller:5000' }
+    - { section: "keystone_authtoken", option: "auth_version", value: 'v3' }
+    - { section: "keystone_authtoken", option: "auth_url", value: 'http://controller:5000' }
+    - { section: "keystone_authtoken", option: "memcached_servers", value: 'controller:11211' }
+    - { section: "keystone_authtoken", option: "auth_type", value: 'password' }
+    - { section: "keystone_authtoken", option: "project_domain_id", value: 'default' }
+    - { section: "keystone_authtoken", option: "user_domain_id", value: 'default' }
+    - { section: "keystone_authtoken", option: "project_name", value: 'service' }
+    - { section: "keystone_authtoken", option: "username", value: 'magnum' }
+    - { section: "keystone_authtoken", option: "password", value: 'password' }
+    - { section: "keystone_authtoken", option: "admin_user", value: 'magnum' }
+    - { section: "keystone_authtoken", option: "admin_password", value: 'password' }
+    - { section: "keystone_authtoken", option: "admin_tenant_name", value: 'service' }
+    - { section: "DEFAULT", option: "transport_url", value: 'rabbit://openstack:password@localhost' }
+    - { section: "oslo_messaging_notifications", option: "driver", value: 'messaging' }
+    - { section: "trust", option: "trustee_domain_admin_name", value: 'magnum_domain_admin' }
+    - { section: "trust", option: "trustee_domain_name", value: 'magnum' }
+    - { section: "trust", option: "trustee_domain_admin_password", value: 'password' }
+    - { section: "trust", option: "trustee_keystone_interface", value: 'public' }
+
+- name: Populate Magnum database
+  shell: su -s /bin/sh -c "magnum-db-manage upgrade" magnum
+
+- name: Restart the Container Infrastructure Management services
+  service:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - magnum-api
+    - magnum-conductor
+
+- name: install magnum-ui plugin to horizon
+  shell: |
+    git clone https://github.com/openstack/magnum-ui
+    cp magnum-ui/magnum_ui/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
+    cp -r magnum-ui/magnum_ui /usr/lib/python3/dist-packages/
+    python3 /usr/share/openstack-dashboard/manage.py compress
+
+- name: Reload the apache2 service
+  systemd:
+    name: apache2
+    state: reloaded
+
+- name: list out the health of the internal services, namely conductor, of magnum
+  register: magreg
+  shell: openstack coe service list
+
+- name: print previous command output
+  debug:
+    var: magreg.stdout_lines
