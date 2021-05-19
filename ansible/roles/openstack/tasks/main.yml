@@ -1,6 +1,9 @@
 - name: install chrony
   include: chrony.yml
 
+- name: configure dns server
+  include: dns.yml
+
 - name:  install MariaDB
   when: "'controller' in {{ group_names }}"
   include: mysql.yml

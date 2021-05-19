@@ -1,0 +1,15 @@
+- name: Installing resolvconf in Ubuntu
+  apt:
+    name: resolvconf
+    state: latest
+
+- name: Set Permanent DNS Nameservers
+  sell: |
+    echo "nameserver 8.8.8.8" >> /etc/resolvconf/resolv.conf.d/head
+    echo "nameserver 8.8.4.4" >> /etc/resolvconf/resolv.conf.d/head
+
+- name: restart the resolvconf service
+  systemd:
+    name: resolvconf
+    state: reloaded
+    enabled: true
