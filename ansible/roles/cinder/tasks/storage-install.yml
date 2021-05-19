@@ -1,0 +1,63 @@
+- name:  Install the supporting utility packages
+  apt:
+    name: [lvm2, thin-provisioning-tools, tgt]
+    state: latest
+
+- name: Create the LVM physical volume /dev/sdb
+  shell: pvcreate /dev/sdb
+
+- name: Create the LVM volume group cinder-volumes
+  shell: vgcreate cinder-volumes /dev/sdb
+
+- name: add a filter that accepts the /dev/sdb device and rejects all other devices
+  ini_file:
+    path: /etc/lvm/lvm.conf
+    owner: root
+    group: root
+    section: devices
+    option: filter
+    value: "[ \"a/sdb/\", \"r/.*/\"]"
+
+- name:  Install the packages
+  apt:
+    name: cinder-volume
+    state: latest
+    
+- name: Edit the /etc/cinder/cinder.conf file
+  ini_file:
+    path: /etc/cinder/cinder.conf
+    owner: cinder
+    group: cinder
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  loop:
+    - { section: "database", option: "connection", value: 'mysql+pymysql://cinder:password@controller/cinder' }
+    - { section: "DEFAULT", option: "transport_url", value: 'rabbit://openstack:password@controller' }
+    - { section: "DEFAULT", option: "my_ip", value: "{{ hostvars[inventory_hostname]['inventory_hostname'] }}" }
+    - { section: "DEFAULT", option: "auth_strategy", value: "keystone" }
+    - { section: "DEFAULT", option: "enabled_backends", value: "lvm" }
+    - { section: "DEFAULT", option: "glance_api_servers", value: "http://controller:9292" }
+    - { section: "keystone_authtoken", option: "www_authenticate_uri", value: 'http://controller:5000' }
+    - { section: "keystone_authtoken", option: "auth_url", value: 'http://controller:5000' }
+    - { section: "keystone_authtoken", option: "memcached_servers", value: 'controller:11211' }
+    - { section: "keystone_authtoken", option: "auth_type", value: 'password' }
+    - { section: "keystone_authtoken", option: "project_domain_name", value: 'Default' }
+    - { section: "keystone_authtoken", option: "user_domain_name", value: 'Default' }
+    - { section: "keystone_authtoken", option: "project_name", value: 'service' }
+    - { section: "keystone_authtoken", option: "username", value: 'cinder' }
+    - { section: "keystone_authtoken", option: "password", value: 'password' }
+    - { section: "lvm", option: "volume_driver", value: 'cinder.volume.drivers.lvm.LVMVolumeDriver' }
+    - { section: "lvm", option: "volume_group", value: 'cinder-volumes' }
+    - { section: "lvm", option: "target_protocol", value: 'iscsi' }
+    - { section: "lvm", option: "target_helper", value: 'tgtadm' }
+    - { section: "oslo_concurrency", option: "lock_path", value: '/var/lib/cinder/tmp' }
+
+
+- name: Restart the Block Storage volume service including its dependencies
+  service:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - tgt
+    - cinder-volume

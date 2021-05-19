@@ -3,9 +3,7 @@
 
 - name:  install MariaDB
   when: "'controller' in {{ group_names }}"
-  apt:
-    name: mysql-server
-    state: latest
+  include: mysql.yml
 
 - name: install openstack client
   include: os-client.yml

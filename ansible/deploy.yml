@@ -24,12 +24,13 @@
     OS_IDENTITY_API_VERSION: 3
 
 - hosts: all
-  name: install nova and neutron
+  name: install nova, neutron and cinder
   gather_facts: yes
   become: yes
   roles:
     - nova
     - neutron
+    - cinder
   environment:
     OS_USERNAME: admin
     OS_PASSWORD: password

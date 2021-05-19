@@ -44,10 +44,10 @@
   shell: openstack role create heat_stack_owner
 
 - name: create demo project
-  shell: openstack project create --domain default --description "Demo Project" demo
+  shell: openstack project create --domain heat --description "Demo Project" demo
 
 - name: create demo user
-  shell: openstack user create --domain default --password password demo
+  shell: openstack user create --domain heat --password password demo
 
 - name: Add the heat_stack_owner role to the demo project and user
   shell: openstack role add --project demo --user demo heat_stack_owner

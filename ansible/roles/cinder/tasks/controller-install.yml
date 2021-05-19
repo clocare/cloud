@@ -1,0 +1,81 @@
+- name: Create the cinder database
+  shell: mysql -e "CREATE DATABASE cinder;"
+
+- name: Grant proper access to the cinder database
+  shell: |
+    mysql -e "CREATE USER 'cinder'@'localhost' IDENTIFIED BY 'password';"
+    mysql -e "GRANT ALL PRIVILEGES ON cinder.* TO 'cinder'@'localhost';"
+    mysql -e "CREATE USER 'cinder'@'controller' IDENTIFIED BY 'password';"
+    mysql -e "GRANT ALL PRIVILEGES ON cinder.* TO 'cinder'@'controller';"
+    mysql -e "CREATE USER 'cinder'@'%' IDENTIFIED BY 'password';"
+    mysql -e "GRANT ALL PRIVILEGES ON cinder.* TO 'cinder'@'%';"
+
+- name: Create the cinder user
+  shell: openstack user create --domain default --password password cinder
+
+- name: Add the admin role to the cinder user
+  shell: openstack role add --project service --user cinder admin
+
+- name: Create the cinderv2 and cinderv3 service entities
+  shell: |
+    openstack service create --name cinderv2 --description "OpenStack Block Storage" volumev2
+    openstack service create --name cinderv3 --description "OpenStack Block Storage" volumev3
+
+- name: Create the Block Storage service API endpoints
+  shell: |
+    openstack endpoint create --region RegionOne volumev2 public http://controller:8776/v2/%\(project_id\)s
+    openstack endpoint create --region RegionOne volumev2 internal http://controller:8776/v2/%\(project_id\)s
+    openstack endpoint create --region RegionOne volumev2 admin http://controller:8776/v2/%\(project_id\)s
+    openstack endpoint create --region RegionOne volumev3 public http://controller:8776/v3/%\(project_id\)s
+    openstack endpoint create --region RegionOne volumev3 internal http://controller:8776/v3/%\(project_id\)s
+    openstack endpoint create --region RegionOne volumev3 admin http://controller:8776/v3/%\(project_id\)s
+
+- name:  install the packages
+  apt:
+    name: [cinder-api, cinder-scheduler]
+    state: latest
+
+- name: Edit the /etc/cinder/cinder.conf file
+  ini_file:
+    path: /etc/cinder/cinder.conf
+    owner: cinder
+    group: cinder
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  loop:
+    - { section: "database", option: "connection", value: 'mysql+pymysql://cinder:password@localhost/cinder' }
+    - { section: "DEFAULT", option: "transport_url", value: 'rabbit://openstack:password@localhost' }
+    - { section: "DEFAULT", option: "my_ip", value: "{{ hostvars[inventory_hostname]['inventory_hostname'] }}" }
+    - { section: "DEFAULT", option: "auth_strategy", value: "keystone" }
+    - { section: "keystone_authtoken", option: "www_authenticate_uri", value: 'http://controller:5000' }
+    - { section: "keystone_authtoken", option: "auth_url", value: 'http://controller:5000' }
+    - { section: "keystone_authtoken", option: "memcached_servers", value: 'controller:11211' }
+    - { section: "keystone_authtoken", option: "auth_type", value: 'password' }
+    - { section: "keystone_authtoken", option: "project_domain_name", value: 'Default' }
+    - { section: "keystone_authtoken", option: "user_domain_name", value: 'Default' }
+    - { section: "keystone_authtoken", option: "project_name", value: 'service' }
+    - { section: "keystone_authtoken", option: "username", value: 'cinder' }
+    - { section: "keystone_authtoken", option: "password", value: 'password' }
+    - { section: "oslo_concurrency", option: "lock_path", value: '/var/lib/cinder/tmp' }
+
+- name: Populate the Block Storage database
+  shell: su -s /bin/sh -c "cinder-manage db sync" cinder
+
+- name: Configure Compute to use Block Storage
+  ini_file:
+    path: /etc/nova/nova.conf
+    owner: nova
+    group: nova
+    section: cinder
+    option: os_region_name
+    value: RegionOne
+
+- name: Restart the Compute API & Block Storage services
+  service:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - nova-api
+    - cinder-scheduler
+    - apache2

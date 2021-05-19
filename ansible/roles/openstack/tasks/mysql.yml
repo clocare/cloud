@@ -1,0 +1,19 @@
+- name:  install MySql
+  when: "'controller' in {{ group_names }}"
+  apt:
+    name: mysql-server
+    state: latest
+
+- name: make mysql accept external connections
+  ini_file:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    owner: root
+    group: root
+    section: "mysqld"
+    option: "bind-address"
+    value: "0.0.0.0"
+
+- name: Restart MySQL
+  service:
+    name: mysql
+    state: restarted

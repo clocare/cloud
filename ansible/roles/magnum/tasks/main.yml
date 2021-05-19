@@ -73,6 +73,7 @@
     - { section: "trust", option: "trustee_domain_name", value: 'magnum' }
     - { section: "trust", option: "trustee_domain_admin_password", value: 'password' }
     - { section: "trust", option: "trustee_keystone_interface", value: 'public' }
+    - { section: "trust", option: "cluster_user_trust", value: true }
 
 - name: Populate Magnum database
   shell: su -s /bin/sh -c "magnum-db-manage upgrade" magnum
