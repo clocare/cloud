@@ -41,11 +41,12 @@
     OS_IDENTITY_API_VERSION: 3
 
 - hosts: controller
-  name: install heat & magnum on controller node
+  name: install heat, barbican & magnum on controller node
   gather_facts: no
   become: yes
   roles:
     - heat
+    - barbican
     - magnum
   environment:
     OS_USERNAME: admin
