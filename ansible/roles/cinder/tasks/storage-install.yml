@@ -1,22 +1,21 @@
 - name:  Install the supporting utility packages
   apt:
-    name: [lvm2, thin-provisioning-tools, tgt]
+    name: nfs-kernel-server
     state: latest
 
-- name: Create the LVM physical volume /dev/sdb
-  shell: pvcreate /dev/sdb
+- name: Exporting a General Purpose Mount
+  sell: |
+    mkdir /var/nfs/general -p
+    sudo chown nobody:nogroup /var/nfs/general
 
-- name: Create the LVM volume group cinder-volumes
-  shell: vgcreate cinder-volumes /dev/sdb
+- name: Configuring the NFS Exports
+  shell: echo "/var/nfs/general    {{ subnet }}(rw,sync,no_subtree_check)" >> /etc/exports
 
-- name: add a filter that accepts the /dev/sdb device and rejects all other devices
-  ini_file:
-    path: /etc/lvm/lvm.conf
-    owner: root
-    group: root
-    section: devices
-    option: filter
-    value: "[ \"a/sdb/\", \"r/.*/\"]"
+- name: Configure the share
+  shell: |
+    echo "{{ hostvars[inventory_hostname]['groups']['storage'][0] }}:/var/nfs/general" > /etc/cinder/nfs_share
+    chown root:cinder /etc/cinder/nfs_share
+    chmod 0640 /etc/cinder/nfs_share
 
 - name:  Install the packages
   apt:
@@ -36,7 +35,7 @@
     - { section: "DEFAULT", option: "transport_url", value: 'rabbit://openstack:password@controller' }
     - { section: "DEFAULT", option: "my_ip", value: "{{ hostvars[inventory_hostname]['inventory_hostname'] }}" }
     - { section: "DEFAULT", option: "auth_strategy", value: "keystone" }
-    - { section: "DEFAULT", option: "enabled_backends", value: "lvm" }
+    - { section: "DEFAULT", option: "enabled_backends", value: "nfs" }
     - { section: "DEFAULT", option: "glance_api_servers", value: "http://controller:9292" }
     - { section: "keystone_authtoken", option: "www_authenticate_uri", value: 'http://controller:5000' }
     - { section: "keystone_authtoken", option: "auth_url", value: 'http://controller:5000' }
@@ -47,10 +46,9 @@
     - { section: "keystone_authtoken", option: "project_name", value: 'service' }
     - { section: "keystone_authtoken", option: "username", value: 'cinder' }
     - { section: "keystone_authtoken", option: "password", value: 'password' }
-    - { section: "lvm", option: "volume_driver", value: 'cinder.volume.drivers.lvm.LVMVolumeDriver' }
-    - { section: "lvm", option: "volume_group", value: 'cinder-volumes' }
-    - { section: "lvm", option: "target_protocol", value: 'iscsi' }
-    - { section: "lvm", option: "target_helper", value: 'tgtadm' }
+    - { section: "nfs", option: "nfs_shares_config", value: '/etc/cinder/nfs_share' }
+    - { section: "nfs", option: "volume_driver", value: 'cinder.volume.drivers.nfs.NfsDriver' }
+    - { section: "nfs", option: "volume_backend_name", value: 'nfsbackend' }
     - { section: "oslo_concurrency", option: "lock_path", value: '/var/lib/cinder/tmp' }
 
 
@@ -59,5 +57,5 @@
     name: "{{ item }}"
     state: restarted
   loop:
-    - tgt
+    - nfs-kernel-server
     - cinder-volume

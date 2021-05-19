@@ -6,6 +6,11 @@
   include: storage-install.yml
   when: "'storage' in {{ group_names }}"
 
+- name:  Install nfs client
+  apt:
+    name: nfs-common
+    state: latest
+
 - name: Verify Cinder operation
   shell: openstack volume service list
   register: cindereg
