@@ -46,7 +46,7 @@
   become: yes
   roles:
     - heat
-    - barbican
+    # - barbican
     - magnum
   environment:
     OS_USERNAME: admin

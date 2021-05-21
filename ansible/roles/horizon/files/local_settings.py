@@ -87,6 +87,9 @@ LOCAL_PATH = os.path.dirname(os.path.abspath(__file__))
 # SECRET_KEY for all of them.
 SECRET_KEY = secret_key.generate_or_read_from_file('/var/lib/openstack-dashboard/secret_key')
 
+OPENSTACK_HYPERVISOR_FEATURES = {
+    'can_set_password': True,
+}
 # We recommend you use memcached for development; otherwise after every reload
 # of the django development server, you will have to login again. To use
 # memcached set CACHES to something like below.

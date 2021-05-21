@@ -4,23 +4,23 @@
     state: latest
 
 - name: Exporting a General Purpose Mount
-  sell: |
+  shell: |
     mkdir /var/nfs/general -p
     sudo chown nobody:nogroup /var/nfs/general
 
 - name: Configuring the NFS Exports
   shell: echo "/var/nfs/general    {{ subnet }}(rw,sync,no_subtree_check)" >> /etc/exports
 
+- name:  Install the packages
+  apt:
+    name: cinder-volume
+    state: latest
+
 - name: Configure the share
   shell: |
     echo "{{ hostvars[inventory_hostname]['groups']['storage'][0] }}:/var/nfs/general" > /etc/cinder/nfs_share
     chown root:cinder /etc/cinder/nfs_share
     chmod 0640 /etc/cinder/nfs_share
-
-- name:  Install the packages
-  apt:
-    name: cinder-volume
-    state: latest
     
 - name: Edit the /etc/cinder/cinder.conf file
   ini_file:
