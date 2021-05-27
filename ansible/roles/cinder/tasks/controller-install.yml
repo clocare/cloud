@@ -46,7 +46,7 @@
   loop:
     - { section: "database", option: "connection", value: 'mysql+pymysql://cinder:password@localhost/cinder' }
     - { section: "DEFAULT", option: "transport_url", value: 'rabbit://openstack:password@localhost' }
-    - { section: "DEFAULT", option: "my_ip", value: "{{ hostvars[inventory_hostname]['inventory_hostname'] }}" }
+    - { section: "DEFAULT", option: "my_ip", value: "{{ controller_ip }}" }
     - { section: "DEFAULT", option: "auth_strategy", value: "keystone" }
     - { section: "keystone_authtoken", option: "www_authenticate_uri", value: 'http://controller:5000' }
     - { section: "keystone_authtoken", option: "auth_url", value: 'http://controller:5000' }

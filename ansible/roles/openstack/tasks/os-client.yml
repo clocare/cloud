@@ -21,7 +21,7 @@
 
 - name: add ips to hosts file
   shell: |
-    echo "{{ hostvars[inventory_hostname]['groups']['controller'][0] }}  controller" >> /etc/hosts
-    echo "{{ hostvars[inventory_hostname]['groups']['compute'][0] }}  compute1" >> /etc/hosts
-    echo "{{ hostvars[inventory_hostname]['groups']['compute'][1] }}  compute2" >> /etc/hosts
-# https://stackoverflow.com/a/39500368/9572485
+    echo "{{ controller_ip }}  controller" >> /etc/hosts
+    echo "{{ compute1_ip }}  compute1" >> /etc/hosts
+    echo "{{ compute2_ip }}  compute2" >> /etc/hosts
+    echo "{{ storage_ip }}  storage" >> /etc/hosts

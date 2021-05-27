@@ -49,7 +49,7 @@
     - { section: "api_database", option: "connection", value: 'mysql+pymysql://nova:password@localhost/nova_api' }
     - { section: "database", option: "connection", value: 'mysql+pymysql://nova:password@localhost/nova' }
     - { section: "DEFAULT", option: "transport_url", value: 'rabbit://openstack:password@localhost:5672/' }
-    - { section: "DEFAULT", option: "my_ip", value: "{{ hostvars[inventory_hostname]['inventory_hostname'] }}" }
+    - { section: "DEFAULT", option: "my_ip", value: "{{ controller_ip }}" }
     - { section: "DEFAULT", option: "log_dir", value: "", remove: true }
     - { section: "keystone_authtoken", option: "www_authenticate_uri", value: 'http://controller:5000' }
     - { section: "keystone_authtoken", option: "auth_url", value: 'http://controller:5000' }
@@ -75,19 +75,25 @@
     - { section: "placement", option: "password", value: 'password' }    
     - { section: "scheduler", option: "discover_hosts_in_cells_interval", value: 300 }    
 
-- name: Determine whether the node supports hardware acceleration for virtual machines
-  shell: egrep -c '(vmx|svm)' /proc/cpuinfo
-  register: cpureg
+- name: setting hypervisor type
+  block:
+    - name: Determine whether the node supports hardware acceleration for virtual machines
+      shell: egrep -c '(vmx|svm)' /proc/cpuinfo
+      register: cpureg
 
-- name: configuring libvirt to use {% if cpureg.stdout_lines[0] | int <= 0 %} qemu {% else %} kvm {% endif %}
-  # when: cpureg.stdout_lines[0] | int <= 0
-  ini_file:
-    path: /etc/nova/nova.conf
-    owner: nova
-    group: nova
-    section: libvirt
-    option: virt_type
-    value: "{% if cpureg.stdout_lines[0] | int <= 0 %}qemu{% else %}kvm{% endif %}"
+    - name: configuring libvirt to use {% if cpureg.stdout_lines[0] | int <= 0 %} qemu {% else %} kvm {% endif %}
+      # when: cpureg.stdout_lines[0] | int <= 0
+      ini_file:
+        path: /etc/nova/nova.conf
+        owner: nova
+        group: nova
+        section: libvirt
+        option: virt_type
+        value: "{% if cpureg.stdout_lines[0] | int <= 0 %}qemu{% else %}kvm{% endif %}"
+  rescue:
+    - name: Print when errors
+      ansible.builtin.debug:
+        msg: 'I caught an error, can do stuff here to fix it, :-)'
 
 - name: Populate the nova-api database
   shell: su -s /bin/sh -c "nova-manage api_db sync" nova

@@ -3,6 +3,10 @@
     name: nova-compute
     state: latest
 
+- name: get host private ip
+  shell: getent hosts $(cat /etc/hostname) | awk '{ print $1 }'
+  register: ipreg
+
 - name: Edit the /etc/nova/nova.conf file
   ini_file:
     path: /etc/nova/nova.conf
@@ -13,7 +17,7 @@
     value: "{{ item.value }}"
   loop:
     - { section: "DEFAULT", option: "transport_url", value: 'rabbit://openstack:password@controller' }
-    - { section: "DEFAULT", option: "my_ip", value: "{{ hostvars[inventory_hostname]['inventory_hostname'] }}" }
+    - { section: "DEFAULT", option: "my_ip", value: "{{ ipreg.stdout_lines[0] }}" }
     - { section: "api", option: "auth_strategy", value: "keystone" }
     - { section: "keystone_authtoken", option: "www_authenticate_uri", value: 'http://controller:5000' }
     - { section: "keystone_authtoken", option: "auth_url", value: 'http://controller:5000' }
@@ -39,29 +43,35 @@
     - { section: "placement", option: "username", value: 'placement' }    
     - { section: "placement", option: "password", value: 'password' }    
 
-- name: Determine whether the node supports hardware acceleration for virtual machines
-  shell: egrep -c '(vmx|svm)' /proc/cpuinfo
-  register: cpureg
+- name: setting hypervisor type
+  block:
+    - name: Determine whether the node supports hardware acceleration for virtual machines
+      shell: egrep -c '(vmx|svm)' /proc/cpuinfo
+      register: cpureg
 
-- name: configuring libvirt to use {% if cpureg.stdout_lines[0] | int <= 0 %} qemu {% else %} kvm {% endif %}
-  # when: cpureg.stdout_lines[0] | int <= 0
-  ini_file:
-    path: /etc/nova/nova.conf
-    owner: nova
-    group: nova
-    section: libvirt
-    option: virt_type
-    value: "{% if cpureg.stdout_lines[0] | int <= 0 %}qemu{% else %}kvm{% endif %}"
+    - name: configuring libvirt to use {% if cpureg.stdout_lines[0] | int <= 0 %} qemu {% else %} kvm {% endif %}
+      # when: cpureg.stdout_lines[0] | int <= 0
+      ini_file:
+        path: /etc/nova/nova.conf
+        owner: nova
+        group: nova
+        section: libvirt
+        option: virt_type
+        value: "{% if cpureg.stdout_lines[0] | int <= 0 %}qemu{% else %}kvm{% endif %}"
 
-- name: configuring libvirt to use {% if cpureg.stdout_lines[0] | int <= 0 %} qemu {% else %} kvm {% endif %}
-  # when: cpureg.stdout_lines[0] | int <= 0
-  ini_file:
-    path:  /etc/nova/nova-compute.conf
-    owner: nova
-    group: nova
-    section: libvirt
-    option: virt_type
-    value: "{% if cpureg.stdout_lines[0] | int <= 0 %}qemu{% else %}kvm{% endif %}"
+    - name: configuring libvirt to use {% if cpureg.stdout_lines[0] | int <= 0 %} qemu {% else %} kvm {% endif %}
+      # when: cpureg.stdout_lines[0] | int <= 0
+      ini_file:
+        path:  /etc/nova/nova-compute.conf
+        owner: nova
+        group: nova
+        section: libvirt
+        option: virt_type
+        value: "{% if cpureg.stdout_lines[0] | int <= 0 %}qemu{% else %}kvm{% endif %}"
+  rescue:
+    - name: Print when errors
+      ansible.builtin.debug:
+        msg: 'I caught an error, can do stuff here to fix it, :-)'
 
 - name: Restart the Compute service
   service:

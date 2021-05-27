@@ -60,7 +60,8 @@
   shell: su -s /bin/sh -c "glance-manage db_sync" glance
 
 - name: Restart service glance-api
-  service:
+  systemd:
+    enabled: true
     name: glance-api
     state: restarted
 
@@ -89,3 +90,14 @@
       --disk-format qcow2 --container-format bare \
       --visibility=public
     rm -f bionic-server-cloudimg-amd64.img
+
+- name: add fedora coreos image
+  shell: |
+    wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/34.20210427.3.0/x86_64/fedora-coreos-34.20210427.3.0-openstack.x86_64.qcow2.xz
+    xz -d fedora-coreos-34.20210427.3.0-openstack.x86_64.qcow2.xz
+    glance image-create --name "fedora34" \
+      --file fedora-coreos-34.20210427.3.0-openstack.x86_64.qcow2 \
+      --disk-format qcow2 --container-format bare \
+      --property os_distro=fedora-coreos \
+      --visibility=public
+    rm -f fedora-coreos-34.20210427.3.0-openstack.x86_64.qcow2

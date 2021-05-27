@@ -18,7 +18,7 @@
 
 - name: Configure the share
   shell: |
-    echo "{{ hostvars[inventory_hostname]['groups']['storage'][0] }}:/var/nfs/general" > /etc/cinder/nfs_share
+    echo "{{ storage_ip }}:/var/nfs/general" > /etc/cinder/nfs_share
     chown root:cinder /etc/cinder/nfs_share
     chmod 0640 /etc/cinder/nfs_share
     
@@ -33,7 +33,7 @@
   loop:
     - { section: "database", option: "connection", value: 'mysql+pymysql://cinder:password@controller/cinder' }
     - { section: "DEFAULT", option: "transport_url", value: 'rabbit://openstack:password@controller' }
-    - { section: "DEFAULT", option: "my_ip", value: "{{ hostvars[inventory_hostname]['inventory_hostname'] }}" }
+    - { section: "DEFAULT", option: "my_ip", value: "{{ storage_ip }}" }
     - { section: "DEFAULT", option: "auth_strategy", value: "keystone" }
     - { section: "DEFAULT", option: "enabled_backends", value: "nfs" }
     - { section: "DEFAULT", option: "glance_api_servers", value: "http://controller:9292" }

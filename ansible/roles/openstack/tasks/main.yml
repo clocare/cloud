@@ -19,6 +19,17 @@
   include: memcached.yml
   when: "'controller' in {{ group_names }}"
 
+- name: install cockpit
+  apt:
+    name: cockpit
+    state: latest
+
+- name: start cockpit
+  systemd:
+    name: cockpit
+    state: started
+    enabled: true
+
 - name: install etcd
   include: etcd.yml
   when: "'controller' in {{ group_names }}"
