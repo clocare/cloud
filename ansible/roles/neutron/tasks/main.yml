@@ -6,6 +6,12 @@
   include: compute-install.yml
   when: "'compute' in {{ group_names }}"
 
+- name: Add NAT iptable's role
+  shell: |
+    sysctl -w net.ipv4.ip_forward=1
+    iptables -t nat -A POSTROUTING -o {{ ansible_facts['default_ipv4']['interface'] }} -j MASQUERADE
+  when: "'controller' in {{ group_names }}"
+
 - name: verify successful launch of the neutron agents
   shell: openstack network agent list
   register: netreg
