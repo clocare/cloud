@@ -11,6 +11,9 @@
 - name: install openstack client
   include: os-client.yml
 
+- name: install kubectl
+  include: kubectl.yml
+
 - name: install rabbitmq
   include: rabbitmq.yml
   when: "'controller' in {{ group_names }}"
