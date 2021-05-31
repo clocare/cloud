@@ -14,3 +14,6 @@
     name: kubectl
     update_cache: yes
     state: latest
+
+- name: install helm
+  shell: curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash

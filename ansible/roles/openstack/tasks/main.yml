@@ -14,6 +14,9 @@
 - name: install kubectl
   include: kubectl.yml
 
+- name: install terraform
+  include: terraform.yml
+
 - name: install rabbitmq
   include: rabbitmq.yml
   when: "'controller' in {{ group_names }}"

@@ -1,0 +1,16 @@
+- name: install packages needed to use the terraform apt repository
+  apt:
+    name: [gnupg, software-properties-common, curl]
+    state: latest
+
+- name: Add the HashiCorp GPG key
+  shell: curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+
+- name: Add the official HashiCorp Linux repository
+  shell: sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+
+- name: Update to add the repository, and install the Terraform CLI
+  apt:
+    name: teraform
+    update_cache: yes
+    state: latest
