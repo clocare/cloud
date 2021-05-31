@@ -11,6 +11,6 @@
 
 - name: Update to add the repository, and install the Terraform CLI
   apt:
-    name: teraform
+    name: terraform
     update_cache: yes
     state: latest

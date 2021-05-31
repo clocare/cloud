@@ -16,8 +16,8 @@
     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
     python3 get-pip.py
 
-- name: install virtualenv and openstacksdk
-  shell: pip3 install virtualenv openstacksdk
+- name: install virtualenv, ansible and openstacksdk
+  shell: pip3 install virtualenv openstacksdk ansible
 
 - name: add ips to hosts file
   shell: |
