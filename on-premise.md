@@ -4,6 +4,7 @@ yes you can also deploy openstack on local machines
 1. first of all you need to prepare 4 machines with these specs
     - one controller node with 2 cores cpu and 8GB of ram as minimum
     - two compute nodes with 4 cores cpu and 8GB of ram for each node as minimum
+    - all compute nodes must support virtualization
     - one storage node with 2GB of ram as minimum
     - all nodes must be in the same network and have internet access
     - you must be able to ssh to these machines without password `hint: use ssh-copy-id command`

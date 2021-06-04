@@ -41,6 +41,13 @@
 3. Change default variables in [variables.tf](/azure/variables.tf) and make sure that your machines specs meet these requirements 
     - controller node : 2 cores cpu and 8GB of ram as minimum
     - compute nodes : 4 cores cpu and 8GB of ram for each node as minimum
+    - all compute nodes must support virtualization. Azure VM Sizes that support Nested Virtualization
+      - D_v3
+      - Ds_v3
+      - E_v3
+      - Es_v3
+      - F2s_v2 – F72s_v2
+      - M
     - storage node : 2GB of ram as minimum
 4. deploy your cloud in One Command
 ```bash

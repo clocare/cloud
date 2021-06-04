@@ -36,7 +36,7 @@
   loop:
     - { section: "linux_bridge", option: "physical_interface_mappings", value: "provider:{{ ansible_facts['default_ipv4']['interface'] }}" }
     - { section: "vxlan", option: "enable_vxlan", value: true }
-    - { section: "vxlan", option: "local_ip", value: "{{ ipreg.stdout_lines[0] }}" }
+    - { section: "vxlan", option: "local_ip", value: "{{ ansible_facts['default_ipv4']['address'] }}" }
     - { section: "vxlan", option: "l2_population", value: true }
     - { section: "securitygroup", option: "enable_security_group", value: true }
     - { section: "securitygroup", option: "firewall_driver", value: "neutron.agent.linux.iptables_firewall.IptablesFirewallDriver" }
