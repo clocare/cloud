@@ -11,8 +11,6 @@ you will deploy these components
 - horizon
 - nova
 - neutron
-- cinder   
-- you can also deploy barbican, heat and magnum, just uncomment it's names in [ansible/deploy.yml](/ansible/deploy.yml) lines 48-50
 ## Deploy your cloud
 - [Azure](azure/README.md)
 - [On Premise](/on-premise.md)
@@ -29,7 +27,6 @@ export OS_AUTH_URL=http://controller:5000/v3
 export OS_IDENTITY_API_VERSION=3
 ```
 ### todos
-- add clocare theme to horizone
+- add clocare theme to horizon
 - make it possible to change passwords before deployment
-- change nfs with a better storage solution
 - make it possible to customize nodes number

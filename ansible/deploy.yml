@@ -30,24 +30,6 @@
   roles:
     - nova
     - neutron
-    - cinder
-  environment:
-    OS_USERNAME: admin
-    OS_PASSWORD: password
-    OS_PROJECT_NAME: admin
-    OS_USER_DOMAIN_NAME: Default
-    OS_PROJECT_DOMAIN_NAME: Default
-    OS_AUTH_URL: http://controller:5000/v3
-    OS_IDENTITY_API_VERSION: 3
-
-- hosts: controller
-  name: install heat, barbican & magnum on controller node
-  gather_facts: no
-  become: yes
-  roles:
-    # - heat
-    # - barbican
-    # - magnum
   environment:
     OS_USERNAME: admin
     OS_PASSWORD: password

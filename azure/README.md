@@ -30,9 +30,10 @@
 5. [Install Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
 
 ## Deploy your cloud
-1. Clone this repo
+1. Clone this repo and checkout to minimal branch
     ```bash
     git clone https://github.com/clocare/cloud
+    git checkout minimal
     ```
 2. Change your directory to azure deployment directory
     ```bash
@@ -40,15 +41,14 @@
     ```
 3. Change default variables in [variables.tf](/azure/variables.tf) and make sure that your machines specs meet these requirements 
     - controller node : 2 cores cpu and 8GB of ram as minimum
-    - compute nodes : 4 cores cpu and 8GB of ram for each node as minimum
-    - all compute nodes must support virtualization. Azure VM Sizes that support Nested Virtualization
+    - compute node : 4 cores cpu and 8GB of ram for each node as minimum
+    - the compute node must support virtualization. Azure VM Sizes that support Nested Virtualization
       - D_v3
       - Ds_v3
       - E_v3
       - Es_v3
       - F2s_v2 – F72s_v2
       - M
-    - storage node : 2GB of ram as minimum
 4. deploy your cloud in One Command
 ```bash
 ./create-infra.sh

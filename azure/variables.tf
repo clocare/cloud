@@ -36,7 +36,7 @@ variable "controller_vm_name" {
 
 variable "controller_vm_size" {
   description = "Specifies the size of the virtual machine."
-  default     = "Standard_D2s_v3"
+  default     = "Standard_D2s_v4"
 }
 
 variable "controller_vm_private_ip" {
@@ -52,42 +52,10 @@ variable "compute1_vm_name" {
 
 variable "compute1_vm_size" {
   description = "Specifies the size of the virtual machine."
-  default     = "Standard_D2s_v3"
+  default     = "Standard_D4s_v3"
 }
 
 variable "compute1_vm_private_ip" {
   description = "Specifies the private ip of the virtual machine."
   default     = "10.0.0.11"
-}
-
-# Compute2 VM Variables
-variable "compute2_vm_name" {
-  description = "VM name referenced also in storage-related names."
-  default = "compute2_vm"
-}
-
-variable "compute2_vm_size" {
-  description = "Specifies the size of the virtual machine."
-  default     = "Standard_DS1_v2"
-}
-
-variable "compute2_vm_private_ip" {
-  description = "Specifies the private ip of the virtual machine."
-  default     = "10.0.0.12"
-}
-
-# Storage VM Variables
-variable "storage_vm_name" {
-  description = "VM name referenced also in storage-related names."
-  default = "storage_vm"
-}
-
-variable "storage_vm_size" {
-  description = "Specifies the size of the virtual machine."
-  default     = "Standard_DS1_v2"
-}
-
-variable "storage_vm_private_ip" {
-  description = "Specifies the private ip of the virtual machine."
-  default     = "10.0.0.13"
 }

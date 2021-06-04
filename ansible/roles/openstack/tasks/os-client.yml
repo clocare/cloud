@@ -23,5 +23,3 @@
   shell: |
     echo "{{ controller_ip }}  controller" >> /etc/hosts
     echo "{{ compute1_ip }}  compute1" >> /etc/hosts
-    echo "{{ compute2_ip }}  compute2" >> /etc/hosts
-    echo "{{ storage_ip }}  storage" >> /etc/hosts
